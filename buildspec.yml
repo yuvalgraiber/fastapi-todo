@@ -1,42 +1,32 @@
 version: 0.2
 
-# Environment variables are not strictly needed here since we are calculating them,
-# but they can be used for debugging.
-# env:
-#   variables:
-#     # ECR_REPO_NAME: "todo-api-repo" 
-
 phases:
   pre_build:
     commands:
       # 1. Start the ECR login process.
       - echo "Logging in to Amazon ECR..."
       
-      # 2. Get the AWS Account ID securely using the STS service. This is more reliable 
-      #    than parsing the CODEBUILD_BUILD_ARN variable.
-      - export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+      # 2. Hardcode the full ECR repository URI. 
+      # This explicitly uses your Account ID (110105104355), region (eu-central-1), 
+      # and repository name (todo-api-repo) to prevent any failure due to 
+      # variable calculation or mismatch. THIS IS THE FINAL TROUBLESHOOTING STEP.
+      - export REPOSITORY_URI="110105104355.dkr.ecr.eu-central-1.amazonaws.com/todo-api-repo"
       
-      # 3. Set the AWS region (inherited from CodeBuild environment).
-      - export AWS_DEFAULT_REGION=$AWS_REGION
-      
-      # 4. Construct the full URI for the ECR repository (replace 'todo-api-repo' if your repository name is different).
-      - REPOSITORY_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/todo-api-repo
-      
-      # 5. Log in to ECR securely using the Docker client and AWS credentials.
-      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPOSITORY_URI
+      # 3. Log in to ECR securely using the Docker client and AWS credentials.
+      # We use the AWS_REGION environment variable automatically provided by CodeBuild.
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $REPOSITORY_URI
 
   build:
     commands:
       - echo "Build started on $(date)"
       
-      # 6. Extract the first 7 characters of the Git commit ID to use as a unique image tag.
+      # 4. Extract the first 7 characters of the Git commit ID to use as a unique image tag.
       - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
       
-      # 7. Build the Docker image using the Dockerfile in the root directory and tag it as 'latest'.
-      #    The '.' ensures the build context is the root directory.
+      # 5. Build the Docker image using the Dockerfile in the root directory and tag it as 'latest'.
       - docker build -t $REPOSITORY_URI:latest .
       
-      # 8. Tag the image with the unique commit ID (e.g., todo-api-repo:abcdef1).
+      # 6. Tag the image with the unique commit ID (e.g., todo-api-repo:abcdef1).
       - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
 
   post_build:
@@ -44,19 +34,19 @@ phases:
       - echo "Build completed on $(date)"
       - echo "Pushing the Docker images..."
       
-      # 9. Push the 'latest' tagged image to the ECR repository.
+      # 7. Push the 'latest' tagged image to the ECR repository.
       - docker push $REPOSITORY_URI:latest
       
-      # 10. Push the unique commit-tagged image to ECR.
+      # 8. Push the unique commit-tagged image to ECR.
       - docker push $REPOSITORY_URI:$IMAGE_TAG
       
       - echo "Writing image definitions file..."
       
-      # 11. Create a JSON file with the image details. This file is the primary artifact 
-      #     that CodePipeline will pass to the final ECS/Fargate deployment stage.
+      # 9. Create a JSON file with the image details. This artifact is used by CodePipeline
+      # to tell ECS/Fargate which image to deploy.
       - printf '[{"name":"todo-api-repo","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
 
 artifacts:
   files:
-    # 12. Specify the output JSON file as the primary artifact of the build stage.
+    # 10. Specify the output JSON file as the primary artifact of the build stage.
     - imagedefinitions.json
