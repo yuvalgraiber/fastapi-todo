@@ -1,0 +1,12 @@
+# Ignore virtual environment folder
+venv/
+
+# Ignore Python build artifacts
+__pycache__/
+*.pyc
+
+# Ignore Docker related temporary files
+*.swp
+
+# Ignore environment file (security)
+.env
