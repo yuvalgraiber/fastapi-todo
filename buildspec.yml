@@ -29,15 +29,15 @@ phases:
       # 6. Tag the image with the unique commit ID (e.g., todo-api-repo:abcdef1).
       - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
 
-  post_build1:
+  post_build:
     commands:
       - echo "Build completed on $(date)"
       - echo "Pushing the Docker images..."
       
-      # 7. Push the 'latest' tagged image to the ECR repository
+      # 7. Push the 'latest' tagged image to the ECR repository.
       - docker push $REPOSITORY_URI:latest
       
-      # 8. Push the unique commit-tagged image to ECR
+      # 8. Push the unique commit-tagged image to ECR.
       - docker push $REPOSITORY_URI:$IMAGE_TAG
       
       - echo "Writing image definitions file..."
@@ -50,4 +50,4 @@ artifacts:
 
   files:
     # 10. Specify the output JSON file as the primary artifact of the build stage.
-   # - imagedefinitions.json
+    - imagedefinitions.json
