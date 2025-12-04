@@ -16,37 +16,38 @@ phases:
       # We use the AWS_REGION environment variable automatically provided by CodeBuild.
       - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $REPOSITORY_URI
 
-#   build:
-#     commands:
-#       - echo "Build started on $(date)"
+  build:
+    commands:
+      - echo "Build started on $(date)"
       
-#       # 4. Extract the first 7 characters of the Git commit ID to use as a unique image tag.
-#       - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      # 4. Extract the first 7 characters of the Git commit ID to use as a unique image tag.
+      - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
       
-#       # 5. Build the Docker image using the Dockerfile in the root directory and tag it as 'latest'.
-#       - docker build -t $REPOSITORY_URI:latest .
+      # 5. Build the Docker image using the Dockerfile in the root directory and tag it as 'latest'.
+      - docker build -t $REPOSITORY_URI:latest .
       
-#       # 6. Tag the image with the unique commit ID (e.g., todo-api-repo:abcdef1).
-#       - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
+      # 6. Tag the image with the unique commit ID (e.g., todo-api-repo:abcdef1).
+      - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
 
-#   post_build:
-#     commands:
-#       - echo "Build completed on $(date)"
-#       - echo "Pushing the Docker images..."
+  post_build1:
+    commands:
+      - echo "Build completed on $(date)"
+      - echo "Pushing the Docker images..."
       
-#       # 7. Push the 'latest' tagged image to the ECR repository.
-#       - docker push $REPOSITORY_URI:latest
+      # 7. Push the 'latest' tagged image to the ECR repository
+      - docker push $REPOSITORY_URI:latest
       
-#       # 8. Push the unique commit-tagged image to ECR.
-#       - docker push $REPOSITORY_URI:$IMAGE_TAG
+      # 8. Push the unique commit-tagged image to ECR
+      - docker push $REPOSITORY_URI:$IMAGE_TAG
       
-#       - echo "Writing image definitions file..."
+      - echo "Writing image definitions file..."
       
-#       # 9. Create a JSON file with the image details. This artifact is used by CodePipeline
-#       # to tell ECS/Fargate which image to deploy.
-#       - printf '[{"name":"todo-api-repo","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
+      # 9. Create a JSON file with the image details. This artifact is used by CodePipeline
+      # to tell ECS/Fargate which image to deploy.
+      - printf '[{"name":"todo-api-repo","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
 
-# artifacts:
-#   files:
-#     # 10. Specify the output JSON file as the primary artifact of the build stage.
-#     - imagedefinitions.json
+artifacts:
+
+  files:
+    # 10. Specify the output JSON file as the primary artifact of the build stage.
+   # - imagedefinitions.json
