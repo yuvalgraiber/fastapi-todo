@@ -22,7 +22,10 @@ WORKDIR /app
 COPY --from=builder /app/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 # ******************************************************************
-
+#adding curl command
+RUN apt-get update && \
+    apt-get install -y curl && \
+    rm -rf /var/lib/apt/lists/*
 # Copy the application source code to the working directory
 # We assume main.py and other files are in the current local folder.
 COPY . .
