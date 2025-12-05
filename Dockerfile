@@ -9,7 +9,7 @@ COPY requirements.txt .
 
 # --- Stage 2: The Final Stage (Runtime Image) ---
 # Use a secure, smaller base image (Debian/Buster) for runtime
-FROM python:3.11-slim-buster
+FROM FROM python:3.11-slim-bullseye
 
 # Environment variable to prevent Python buffering output (crucial for logs)
 ENV PYTHONUNBUFFERED=1
