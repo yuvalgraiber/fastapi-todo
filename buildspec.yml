@@ -44,7 +44,7 @@ phases:
       
       # 9. Create a JSON file with the image details. This artifact is used by CodePipeline
       # to tell ECS/Fargate which image to deploy.
-      - printf '[{"name":"todo-api-repo","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
+      - printf '[{"name":"todo-api-ecr","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
 
 artifacts:
 
