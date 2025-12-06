@@ -3,51 +3,27 @@ version: 0.2
 phases:
   pre_build:
     commands:
-      # 1. Start the ECR login process.
       - echo "Logging in to Amazon ECR..."
-      
-      # 2. Hardcode the full ECR repository URI. 
-      # This explicitly uses your Account ID (110105104355), region (eu-central-1), 
-      # and repository name (todo-api-repo) to prevent any failure due to 
-      # variable calculation or mismatch. THIS IS THE FINAL TROUBLESHOOTING STEP.
       - export REPOSITORY_URI="110105104355.dkr.ecr.eu-central-1.amazonaws.com/todo-api-repo"
-      
-      # 3. Log in to ECR securely using the Docker client and AWS credentials.
-      # We use the AWS_REGION environment variable automatically provided by CodeBuild.
       - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $REPOSITORY_URI
 
   build:
     commands:
       - echo "Build started on $(date)"
-      
-      # 4. Extract the first 7 characters of the Git commit ID to use as a unique image tag.
       - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
-      
-      # 5. Build the Docker image using the Dockerfile in the root directory and tag it as 'latest'.
       - docker build -t $REPOSITORY_URI:latest .
-      
-      # 6. Tag the image with the unique commit ID (e.g., todo-api-repo:abcdef1).
       - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
 
   post_build:
     commands:
       - echo "Build completed on $(date)"
       - echo "Pushing the Docker images..."
-      
-      # 7. Push the 'latest' tagged image to the ECR repository.
       - docker push $REPOSITORY_URI:latest
-      
-      # 8. Push the unique commit-tagged image to ECR.
       - docker push $REPOSITORY_URI:$IMAGE_TAG
-      
       - echo "Writing image definitions file..."
-      
-      # 9. Create a JSON file with the image details. This artifact is used by CodePipeline
-      # to tell ECS/Fargate which image to deploy.
       - printf '[{"name":"todo-api-ecr","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
 
 artifacts:
 
   files:
-    # 10. Specify the output JSON file as the primary artifact of the build stage.
     - imagedefinitions.json
