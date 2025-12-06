@@ -4,10 +4,7 @@ from fastapi import FastAPI, HTTPException
 
 # --- 1. Define the Data Model using Pydantic ---
 class Task(BaseModel):
-    """
-    Represents a single To-Do item.
-    """
-    id: Optional[int] = None # ID is assigned by the server (Optional for input)
+    id: Optional[int] = None
     title: str
     description: Optional[str] = None
     completed: bool = False
@@ -25,17 +22,9 @@ app = FastAPI(title="DevOps To-Do API", version="1.0.0")
 def create_task(task: Task):
     """
     Creates a new To-Do task and assigns it a unique ID.
-    
-    This function simulates adding an item to a database and 
-    is crucial for testing the CI/CD pipeline later.
     """
     global next_id
     
-    # Check for duplicate ID (should not happen, but good practice)
-    if any(t.id == task.id for t in tasks_db):
-        raise HTTPException(status_code=400, detail="Task ID already exists")
-
-    # Assign the next available ID
     task.id = next_id
     next_id += 1
     
@@ -53,30 +42,23 @@ def read_tasks():
 def read_task(task_id: int):
     """
     Retrieves a single To-Do task by its unique ID.
-    
-    If the task is not found, it returns a 404 error.
     """
     for task in tasks_db:
         if task.id == task_id:
             return task
     
-    # Raise a standard 404 (Not Found) error
     raise HTTPException(status_code=404, detail="Task not found")
 
 @app.put("/tasks/{task_id}", response_model=Task)
 def update_task(task_id: int, updated_task: Task):
     """
-    Updates an existing To-Do task by its ID. 
-    Requires the full task body to be provided (PUT).
+    Updates an existing To-Do task by its ID.
     """
     for index, task in enumerate(tasks_db):
         if task.id == task_id:
-            # Update the task fields
             tasks_db[index].title = updated_task.title
             tasks_db[index].description = updated_task.description
             tasks_db[index].completed = updated_task.completed
-            
-            # Ensure the ID remains the same
             tasks_db[index].id = task_id 
             return tasks_db[index]
     
@@ -86,20 +68,13 @@ def update_task(task_id: int, updated_task: Task):
 def delete_task(task_id: int):
     """
     Deletes a To-Do task by its unique ID. 
-    Returns 204 (No Content) upon successful deletion.
     """
     global tasks_db
     
-    # Create a new list excluding the task to be deleted
     initial_length = len(tasks_db)
     tasks_db = [task for task in tasks_db if task.id != task_id]
     
-    # Check if a task was actually removed
     if len(tasks_db) == initial_length:
         raise HTTPException(status_code=404, detail="Task not found")
     
     return
-
-# @app.get("/")
-# def read_root():
-#     return {"message": "Hello FastAPI!"} # נשמור את זה למקרה שנרצה לבדוק אם השרת עובד
